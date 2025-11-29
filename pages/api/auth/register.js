@@ -1,42 +1,42 @@
-// pages/api/auth/register.js
-import { getPool } from '../../../lib/db';
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
+import { getPool } from "../../../lib/db";
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
   }
 
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: 'All fields are required' });
+    return res.status(400).json({ message: "Missing required fields" });
   }
 
   try {
     const pool = getPool();
 
-    // check if email already exists
-    const [rows] = await pool.query('SELECT id FROM users WHERE email = ?', [
-      email,
-    ]);
-    if (rows.length > 0) {
-      return res.status(400).json({ message: 'Email already registered' });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const [result] = await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-      [name, email, passwordHash]
+    // Check if email already exists
+    const [existing] = await pool.query(
+      "SELECT id FROM users WHERE email = ? LIMIT 1",
+      [email]
     );
 
-    return res.status(201).json({
-      message: 'User registered successfully',
-      userId: result.insertId,
-    });
+    if (existing.length > 0) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    // Hash password
+    const hashed = await bcrypt.hash(password, 10);
+
+    // Insert new user
+    const [result] = await pool.query(
+      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+      [name, email, hashed]
+    );
+
+    return res.status(201).json({ message: "User created", userId: result.insertId });
   } catch (err) {
-    console.error('Register error', err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Register error:", err); // This shows up in Vercel logs
+    return res.status(500).json({ message: "Server error" });
   }
 }
