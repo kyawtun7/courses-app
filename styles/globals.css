@@ -41,7 +41,7 @@ body {
     'Segoe UI', sans-serif;
   background-color: var(--page-bg); /* NO gradients, NO images */
   color: var(--text-main);
-  animation: bodyFade 0.4s ease;
+  animation: bodyFade 0.1s ease;
 }
 
 /* Next root */
